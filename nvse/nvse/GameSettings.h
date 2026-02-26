@@ -19,12 +19,9 @@ public:
 		char			h;
 	};
 
-	CustomGameSetting() { memset(this, 0, sizeof(CustomGameSetting)); }
-	~CustomGameSetting() {};
-
-	void*		__vftable;
-	Info		uValue;
-	const char* pKey;
+	void*		__vftable = nullptr;
+	Info		uValue{};
+	const char* pKey = nullptr;
 
 	void Initialize(const char* apName, float afValue) {
 		ThisCall(0x40E0B0, this, apName, afValue);

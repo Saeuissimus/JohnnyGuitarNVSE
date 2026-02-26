@@ -4,6 +4,30 @@
 
 #include "GameUI.h"
 #include <algorithm>
+
+// Used to avoid non trivial constructors during DLL load (i.e. while executing DllMain)
+template<class T>
+struct Lazy {
+	std::optional<T> value;
+
+	T& get() {
+		if (!value) value.emplace();
+		return *value;
+	}
+	const T& get() const {
+		return const_cast<Lazy*>(this)->get();
+	}
+
+	T* operator->() { return &get(); }
+	const T* operator->() const { return &get(); }
+
+	T& operator*() { return get(); }
+	const T& operator*() const { return get(); }
+
+	// bool initialized() const { return value.has_value(); }
+	// void reset() { value.reset(); }
+};
+
 NVSEArrayVarInterface* g_arrInterface = NULL;
 NVSEStringVarInterface* g_strInterface = NULL;
 NVSEMessagingInterface* g_msg = NULL;
@@ -38,15 +62,15 @@ bool bFixJIP = true;
 unsigned int iFPSCapLoadScreen = 0;
 float iDeathSoundMAXTimer = 10;
 bool bDisableDLLCompatibilityRoutines = 0;
-std::unordered_map<uint8_t, float> shakeRequests;
+Lazy<std::unordered_map<uint8_t, float>> shakeRequests;
 TESSound* questFailSound = 0;
 TESSound* questNewSound = 0;
 TESSound* questCompeteSound = 0;
 TESSound* locationDiscoverSound = 0;
-std::unordered_map<uint32_t, char*> markerIconMap;
-std::unordered_map <uint32_t, std::vector<const char*>> factionRepIcons;
-std::unordered_map<std::string, int> miscStatMap;
-std::unordered_set<std::string> availableMiscStats;
+Lazy<std::unordered_map<uint32_t, char*>> markerIconMap;
+Lazy<std::unordered_map <uint32_t, std::vector<const char*>>> factionRepIcons;
+Lazy<std::unordered_map<std::string, int>> miscStatMap;
+Lazy<std::unordered_set<std::string>> availableMiscStats;
 uint32_t disableMuzzleLights = -1;
 static float vatsSpreadMultValue = 15.0;
 uint32_t g_initialTickCount = 0;
@@ -56,11 +80,11 @@ StatsMenu* g_statsMenu = nullptr;
 uint8_t recalculateStatFilters = 0;
 void(__thiscall* OriginalBipedModelUpdateWeapon)(BipedAnim*, TESObjectWEAP*, int) = (void(__thiscall*)(BipedAnim*, TESObjectWEAP*, int)) 0x4AB400;
 uint8_t(__thiscall* ContChangesEntry_GetWeaponModFlags)(ContChangesEntry* weapEntry) = (uint8_t(__thiscall*)(ContChangesEntry*)) 0x4BD820;
-std::unordered_set<BYTE> SaveGameUMap;
+Lazy<std::unordered_set<BYTE>> SaveGameUMap;
 uintptr_t g_canSaveNowAddr = 0;
 uintptr_t g_canSaveNowMenuAddr = 0;
 Setting** g_miscStatData = (Setting**)0x11C6D50;
-std::unordered_set<DWORD> jg_gameRadioSet;
+Lazy<std::unordered_set<DWORD>> jg_gameRadioSet;
 static float g_viewmodel_near = 0.f;
 bool mlcOverridden = false;
 MediaLocationController* mlcOverride = nullptr;
@@ -189,16 +213,17 @@ void __fastcall SetCameraRotateHook(NiNode* apThis, void*, NiMatrix3& arRot) {
 }
 
 namespace NPCAccuracy {
-	struct {
+	struct Tables {
 		std::unordered_map<uintptr_t, float> ACTREF;
 
 		std::unordered_map<uintptr_t, float> ACTBAS;
 		std::unordered_map<uintptr_t, float> CSTY;
 		std::unordered_map<uintptr_t, float> FACT;
-	} tables;
+	};
+	Lazy<Tables> tables;
 
 	void FlushMapRefs() {
-		tables.ACTREF.clear();
+		tables->ACTREF.clear();
 	}
 	__declspec (noinline) double __fastcall returnActorMult(Actor* a_refr) {
 
@@ -210,14 +235,14 @@ namespace NPCAccuracy {
 			return 1.0f;
 		};
 		double retMul = 1.0f;
-		retMul *= findValInTable(a_refr->GetFormID(), tables.ACTREF);
-		retMul *= findValInTable(GetPermanentBaseForm(a_refr)->GetFormID(), tables.ACTBAS);
+		retMul *= findValInTable(a_refr->GetFormID(), tables->ACTREF);
+		retMul *= findValInTable(GetPermanentBaseForm(a_refr)->GetFormID(), tables->ACTBAS);
 		if (auto pCStyle = a_refr->GetCombatStyle()) {
-			retMul *= findValInTable(pCStyle->GetFormID(), tables.CSTY);
+			retMul *= findValInTable(pCStyle->GetFormID(), tables->CSTY);
 		}
 		auto factionsForAct = GetFactionsForActor(a_refr);
 		for (auto factRefId : factionsForAct) {
-			retMul *= findValInTable(factRefId, tables.FACT);
+			retMul *= findValInTable(factRefId, tables->FACT);
 		}
 		return retMul;
 
@@ -241,10 +266,10 @@ namespace NPCAccuracy {
 		}
 	};
 	void CreateHook() {
-		tables.ACTREF.max_load_factor(0.75);
-		tables.FACT.max_load_factor(0.75);
-		tables.CSTY.max_load_factor(0.75);
-		tables.ACTBAS.max_load_factor(0.75);
+		tables->ACTREF.max_load_factor(0.75);
+		tables->FACT.max_load_factor(0.75);
+		tables->CSTY.max_load_factor(0.75);
+		tables->ACTBAS.max_load_factor(0.75);
 		hk_NPCWobble<0x0524019>();
 	}
 };
@@ -329,7 +354,7 @@ public:
 
 };
 
-std::unordered_map<uint32_t, std::map<uint32_t, DialogueEmotionOverride>> dialogResponseOverrideMap;
+Lazy<std::unordered_map<uint32_t, std::map<uint32_t, DialogueEmotionOverride>>> dialogResponseOverrideMap;
 
 
 
@@ -337,19 +362,19 @@ std::unordered_map<uint32_t, std::map<uint32_t, DialogueEmotionOverride>> dialog
 template <class T>
 struct JGSetList {
 	bool isWhiteList = false;
-	std::unordered_set<T> set;
+	Lazy<std::unordered_set<T>> set;
 	void dFlush() {
 		isWhiteList = false;
-		set.clear();
+		set->clear();
 	};
 	bool Allow(T obj) {
-		return bool(set.count(obj)) == isWhiteList;
+		return bool(set->count(obj)) == isWhiteList;
 	}
 	void Add(T obj) {
-		set.insert(obj);
+		set->insert(obj);
 	}
 	void Remove(T obj) {
-		set.erase(obj);
+		set->erase(obj);
 	}
 };
 
@@ -409,8 +434,8 @@ namespace hk_CameraShakeHook {
 }
 
 namespace hk_BarterHook {
-	std::unordered_map<DWORD, JGSetList<DWORD>> barterFilterListLeft;
-	std::unordered_map<DWORD, JGSetList<DWORD>> barterFilterListRight;
+	Lazy<std::unordered_map<DWORD, JGSetList<DWORD>>> barterFilterListLeft;
+	Lazy<std::unordered_map<DWORD, JGSetList<DWORD>>> barterFilterListRight;
 	enum barterHideFlags {
 		kBarterDoNotHideLeft = 1 << 0,
 		kBarterDoNotHideRight
@@ -429,8 +454,8 @@ namespace hk_BarterHook {
 			if (!merchantRef) return shouldHide;
 			auto originalForm = ref->type;
 			if (!PlayerCharacter::GetSingleton()) return shouldHide;
-			auto it = barterFilterListLeft.find(originalForm->GetFormID());
-			if (it != barterFilterListLeft.end()) {
+			auto it = barterFilterListLeft->find(originalForm->GetFormID());
+			if (it != barterFilterListLeft->end()) {
 				auto &barterSet = it->second;
 				shouldHide = barterSet.Allow(merchantRef->GetFormID()) || barterSet.Allow(merchantRef->baseForm->GetFormID()) || barterSet.Allow(0) || barterSet.Allow(PlayerCharacter::GetSingleton()->GetFormID());
 			}
@@ -458,8 +483,8 @@ namespace hk_BarterHook {
 			auto merchantRef = barterMenu->merchantRef;
 			if (!merchantRef) return shouldHide;
 			auto originalForm = ref->type;
-			auto it = barterFilterListRight.find(originalForm->GetFormID());
-			if (it != barterFilterListRight.end()) {
+			auto it = barterFilterListRight->find(originalForm->GetFormID());
+			if (it != barterFilterListRight->end()) {
 				auto& barterSet = it->second;
 				shouldHide = barterSet.Allow(merchantRef->GetFormID()) || barterSet.Allow(merchantRef->baseForm->GetFormID()) || barterSet.Allow(0) || barterSet.Allow(PlayerCharacter::GetSingleton()->GetFormID());
 
@@ -587,7 +612,7 @@ namespace hk_DialogueTopicResponseManageHook {
 		uint32_t speakerAnimation;
 		uint32_t listenerAnimation;
 	};
-	std::unordered_map<uint32_t, std::map<uint32_t, DialogueCache>> cachedDialogueInfo;
+	Lazy<std::unordered_map<uint32_t, std::map<uint32_t, DialogueCache>>> cachedDialogueInfo;
 
 
 	static uintptr_t originalTopicInfoLoad = 0x104D5D4;
@@ -607,7 +632,7 @@ namespace hk_DialogueTopicResponseManageHook {
 					diaCache.responseNumber = responseItem->data.responseNumber;
 					diaCache.speakerAnimation = (responseItem->spkeakerAnimation) ? responseItem->spkeakerAnimation->GetFormID() : 0;
 					diaCache.listenerAnimation = (responseItem->listenerAnimation) ? responseItem->listenerAnimation->GetFormID() : 0;
-					cachedDialogueInfo[topicInfo->GetFormID()][responseItem->data.responseNumber] = diaCache;
+					(*cachedDialogueInfo)[topicInfo->GetFormID()][responseItem->data.responseNumber] = diaCache;
 				} while (responseItem = responseItem->next);
 			}
 		}
@@ -617,7 +642,7 @@ namespace hk_DialogueTopicResponseManageHook {
 	static  DialogueResponse* __fastcall DialogueResponse_Init(DialogueResponse* responseCol,
 		void* edx, TESQuest* quest, TESTopic* topic, TESTopicInfo* topicInfo, Actor* speaker, TESTopicInfoResponse* topicInfoResponse)
 	{
-		if (auto diaCont = dialogResponseOverrideMap.find(topicInfo->GetFormID()); diaCont != dialogResponseOverrideMap.end())
+		if (auto diaCont = dialogResponseOverrideMap->find(topicInfo->GetFormID()); diaCont != dialogResponseOverrideMap->end())
 		{
 
 			Setting* iSTDEmotionVal = (Setting*) 0x11CBDF4;
@@ -888,11 +913,11 @@ NiAVObject* NiNode::GetBlock(const char* blockName) {
 }
 
 bool __fastcall CanSaveNowHook(void* ThisObj, void* edx, int isAutoSave) {
-	return ThisCall<bool>(g_canSaveNowAddr, ThisObj, isAutoSave) && SaveGameUMap.empty();
+	return ThisCall<bool>(g_canSaveNowAddr, ThisObj, isAutoSave) && SaveGameUMap->empty();
 }
 
 bool __fastcall CanSaveNowMenuHook(void* ThisObj, void* edx, int isAutoSave) {
-	return ThisCall<bool>(g_canSaveNowMenuAddr, ThisObj, isAutoSave) && SaveGameUMap.empty();
+	return ThisCall<bool>(g_canSaveNowMenuAddr, ThisObj, isAutoSave) && SaveGameUMap->empty();
 }
 
 void __fastcall BipedModelUpdateWeapon(BipedAnim* BipedAnim, Character* fnCharacter, TESObjectWEAP* weap, int weapMods) {
@@ -921,8 +946,8 @@ bool __fastcall FleeFixHook(PlayerCharacter* Player, void* unused, bool& IsHidde
 char** defaultMarkerList = (char**)0x11A0404;
 
 char* __fastcall GetMapMarker(TESObjectREFR* thisObj, uint16_t mapMarkerType) {
-	auto it = markerIconMap.find(thisObj->GetFormID());
-	if (it != markerIconMap.end()) return it->second;
+	auto it = markerIconMap->find(thisObj->GetFormID());
+	if (it != markerIconMap->end()) return it->second;
 	return defaultMarkerList[mapMarkerType];
 }
 
@@ -945,17 +970,17 @@ void __fastcall DisableMuzzleFlashLightsHook(ProjectileData* a1) {
 	}
 }
 void SetMapMarkerIcon(TESObjectREFR* marker, char* iconPath) {
-	auto pos = markerIconMap.find(marker->GetFormID());
+	auto pos = markerIconMap->find(marker->GetFormID());
 	uint32_t bufferSize = strlen(iconPath) + 1;
 	char* pathCopy = BSMemory::malloc<char>(bufferSize);
 	strcpy_s(pathCopy, bufferSize, iconPath);
 
-	if (pos != markerIconMap.end()) {
+	if (pos != markerIconMap->end()) {
 		delete[] pos->second;
 		pos->second = pathCopy;
 	}
 	else {
-		markerIconMap.insert({ marker->GetFormID(), pathCopy });
+		markerIconMap->insert({ marker->GetFormID(), pathCopy });
 	}
 }
 
@@ -1242,8 +1267,8 @@ __declspec (naked) void PatchPlayerPainHook(){
 
 
 const char* __fastcall GetReputationIconHook(TESReputation* rep) {
-	auto it = factionRepIcons.find(rep->GetFormID());
-	if (it != factionRepIcons.end()) {
+	auto it = factionRepIcons->find(rep->GetFormID());
+	if (it != factionRepIcons->end()) {
 		uint8_t tierID = 0;
 		uint8_t pos = ThisCall<uint8_t>(0x616950, rep, 1);
 		uint8_t neg = ThisCall<uint8_t>(0x616950, rep, 0);
@@ -1285,8 +1310,8 @@ const char* __fastcall GetReputationMessageIconHook(uint32_t a1) {
 			break;
 	}
 	if (rep && rep->GetFormID()) {
-		auto it = factionRepIcons.find(rep->GetFormID());
-		if (it != factionRepIcons.end()) {
+		auto it = factionRepIcons->find(rep->GetFormID());
+		if (it != factionRepIcons->end()) {
 			uint8_t tierID = 0;
 			if (a1 == 0x11CBAD0 || a1 == 0x11CBC34) {
 				tierID = 1;
@@ -1303,14 +1328,14 @@ const char* __fastcall GetReputationMessageIconHook(uint32_t a1) {
 
 void ComputeDiscoveredRadioDirectory() {
 	static ULONGLONG timer = GetTickCount64();
-	if (((GetTickCount64() - timer) > 1000) || jg_gameRadioSet.empty()) {
+	if (((GetTickCount64() - timer) > 1000) || jg_gameRadioSet->empty()) {
 		timer = GetTickCount64();
-		jg_gameRadioSet.clear();
-		jg_gameRadioSet.insert(0);
+		jg_gameRadioSet->clear();
+		jg_gameRadioSet->insert(0);
 		tList<TESObjectACTI>* discoveredRadios = CdeclCall<tList<TESObjectACTI>*>(0x79C080);
 		for (auto radioIter = discoveredRadios->Begin(); !radioIter.End(); radioIter.Next()) {
 			if (*radioIter) {
-				jg_gameRadioSet.insert((*radioIter)->GetFormID());
+				jg_gameRadioSet->insert((*radioIter)->GetFormID());
 			}
 		}
 	}
@@ -1498,8 +1523,8 @@ void __cdecl MiscStatRefreshHook(Tile* tile, int id) {
 	}
 	else {
 		std::string sName = tile->name.pString;
-		auto it = miscStatMap.find(sName);
-		if (it != miscStatMap.end()) {
+		auto it = miscStatMap->find(sName);
+		if (it != miscStatMap->end()) {
 			value = it->second;
 		}
 	}
@@ -1510,7 +1535,7 @@ bool __cdecl ShouldHideStat(uint32_t* id) {
 	if ((uint32_t)id >= 43) {
 		Tile* tile = g_statsMenu->miscStatIDList.GetTileFromItem(&id);
 		std::string sName = tile->name.c_str();
-		if (miscStatMap.find(sName) == miscStatMap.end()) return true;
+		if (miscStatMap->find(sName) == miscStatMap->end()) return true;
 	}
 	return false;
 }
@@ -1539,9 +1564,9 @@ void UpdateMiscStatList(const char* name, int value) {
 }
 
 void ResetMiscStatMap() {
-	miscStatMap.clear();
-	for (auto& element : availableMiscStats) {
-		miscStatMap[element] = 0;
+	miscStatMap->clear();
+	for (auto& element : *availableMiscStats) {
+		(*miscStatMap)[element] = 0;
 		UpdateMiscStatList(element.c_str(), 0);
 	}
 
@@ -1833,11 +1858,11 @@ MediaLocationController* __fastcall MLCOverrideHook(PlayerCharacter* player)
 }
 
 float getHUDShakePower() {
-	if (shakeRequests.empty()) {
+	if (shakeRequests->empty()) {
 		return 0.0f;
 	}
 	auto maxElement = std::max_element(
-		shakeRequests.begin(), shakeRequests.end(),
+		shakeRequests->begin(), shakeRequests->end(),
 		[](const auto& a, const auto& b) {
 			return a.second < b.second;
 		});

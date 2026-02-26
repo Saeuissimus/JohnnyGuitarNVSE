@@ -38,8 +38,8 @@ bool Cmd_DialogResponseGetResponseAmount_Execute(COMMAND_ARGS)
 	*result = 0;
 	if (ExtractArgsEx(EXTRACT_ARGS_EX, &dialogResponse) && dialogResponse && IS_TYPE(dialogResponse, TESTopicInfo))
 	{
-		auto it = hk_DialogueTopicResponseManageHook::cachedDialogueInfo.find(dialogResponse->GetFormID());
-		if (it != hk_DialogueTopicResponseManageHook::cachedDialogueInfo.end()) 
+		auto it = hk_DialogueTopicResponseManageHook::cachedDialogueInfo->find(dialogResponse->GetFormID());
+		if (it != hk_DialogueTopicResponseManageHook::cachedDialogueInfo->end())
 		{
 			*result = it->second.size();
 		}
@@ -51,13 +51,13 @@ DialogueEmotionOverride GetDialogueResponse(uint32_t refId, uint32_t responseNum
 {
 	TESIdleForm* speakerAnim = *(TESIdleForm**)0x11CA244;
 	TESIdleForm* listenerAnim = *(TESIdleForm**)0x11CA244;
-	auto it = dialogResponseOverrideMap[refId].find(responseNumber);
-	if (it == dialogResponseOverrideMap[refId].end())
+	auto it = (*dialogResponseOverrideMap)[refId].find(responseNumber);
+	if (it == (*dialogResponseOverrideMap)[refId].end())
 	{
-		dialogResponseOverrideMap[refId][responseNumber] = DialogueEmotionOverride(INT_MAX, -1, speakerAnim, listenerAnim, -1);
+		(*dialogResponseOverrideMap)[refId][responseNumber] = DialogueEmotionOverride(INT_MAX, -1, speakerAnim, listenerAnim, -1);
 
 	}
-	DialogueEmotionOverride currentOverride = dialogResponseOverrideMap[refId][responseNumber];
+	DialogueEmotionOverride currentOverride = (*dialogResponseOverrideMap)[refId][responseNumber];
 	return currentOverride;
 
 }
@@ -80,8 +80,8 @@ bool Cmd_SetDialogResponseOverrideValues_Execute(COMMAND_ARGS) {
 	{
 		if (setOrRemove > 0)
 		{
-			auto it = dialogResponseOverrideMap[dialogResponse->GetFormID()].find(responseNumber);
-			//if (it != dialogResponseOverrideMap[dialogResponse->GetFormID()].end())
+			auto it = (*dialogResponseOverrideMap)[dialogResponse->GetFormID()].find(responseNumber);
+			//if (it != (*dialogResponseOverrideMap)[dialogResponse->GetFormID()].end())
 			if (false)
 			{
 
@@ -90,19 +90,19 @@ bool Cmd_SetDialogResponseOverrideValues_Execute(COMMAND_ARGS) {
 			}
 			else
 			{
-				dialogResponseOverrideMap[dialogResponse->GetFormID()][responseNumber] = DialogueEmotionOverride(responseEmotion, responseEmotionValue, speakerAnim, listenerAnim, flags);
+				(*dialogResponseOverrideMap)[dialogResponse->GetFormID()][responseNumber] = DialogueEmotionOverride(responseEmotion, responseEmotionValue, speakerAnim, listenerAnim, flags);
 			}
 		}
 
 		else
 		{
-			auto it = dialogResponseOverrideMap.find(dialogResponse->GetFormID());
-			if (it != dialogResponseOverrideMap.end())
+			auto it = dialogResponseOverrideMap->find(dialogResponse->GetFormID());
+			if (it != dialogResponseOverrideMap->end())
 			{
 				it->second.erase(responseNumber);
 				if (it->second.size() < 1)
 				{
-					dialogResponseOverrideMap.erase(dialogResponse->GetFormID());
+					dialogResponseOverrideMap->erase(dialogResponse->GetFormID());
 				}
 			}
 		}

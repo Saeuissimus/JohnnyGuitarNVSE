@@ -72,15 +72,15 @@ void MessageHandler(NVSEMessagingInterface::Message* msg) {
 			OnCrosshairHandler->FlushEventCallbacks();
 			OnPLChangeHandler->FlushEventCallbacks();
 			RestoreDisabledPlayerControlsHUDFlags();
-			SaveGameUMap.clear();
+			SaveGameUMap->clear();
 			ResetMiscStatMap();
 			hk_RSMBarberHook::haircutSetList.dFlush();
 			hk_RSMBarberHook::beardSetList.dFlush();
-			jg_gameRadioSet.clear();
-			hk_BarterHook::barterFilterListLeft.clear();
-			hk_BarterHook::barterFilterListRight.clear();
+			jg_gameRadioSet->clear();
+			hk_BarterHook::barterFilterListLeft->clear();
+			hk_BarterHook::barterFilterListRight->clear();
 			NPCAccuracy::FlushMapRefs();
-			shakeRequests.clear();
+			shakeRequests->clear();
 			mlcOverridden = false;
 			mlcOverride = nullptr;
 			ClearPlayerFurniture(); //fix furniture crash on reload
@@ -579,8 +579,8 @@ EXTERN_DLL_EXPORT bool NVSEPlugin_Load(const NVSEInterface* nvse) {
 
 		JGGameCamera.WorldMatrx = new JGWorldToScreenMatrix;
 		JGGameCamera.CamPos = new JGCameraPosition;
-		SaveGameUMap.reserve(0xFF);
-		shakeRequests.reserve(0xFF);
+		SaveGameUMap->reserve(0xFF);
+		shakeRequests->reserve(0xFF);
 
 		if (bFixJIP) {
 			JIPFixes::InitData();
