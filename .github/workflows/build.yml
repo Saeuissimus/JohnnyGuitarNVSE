@@ -22,21 +22,11 @@ jobs:
       - name: Build Release
         run: msbuild /m /p:Configuration=Release ${{ env.SOLUTION_FILE_PATH }} /p:PostBuildEventUseInBuild=false
 
-      - name: Package
-        shell: pwsh
-        run: |
-          $out = "artifacts"
-          New-Item -ItemType Directory -Force $out | Out-Null
-
-          # Adjust paths if your output dirs differ
-          $releaseDir = "JG\Release"
-
-          Compress-Archive -Force -Path "$releaseDir\johnnyguitar.dll","$releaseDir\johnnyguitar.pdb" `
-            -DestinationPath "$out\JohnnyGuitar-Release.zip"
-
       - name: Upload artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: johnnyguitar-msvc
-          path: artifacts/*.zip
+          name: johnnyguitar-msvc.zip
+          path: |
+            JG/Release/johnnyguitar.dll
+            JG/Release/johnnyguitar.pdb
           retention-days: 1
