@@ -1,22 +1,25 @@
 #include "BSMemory.hpp"
-#include <mutex>
+#include <windows.h>
 
 namespace BSMemory {
 
 	// -------------------------------------------------------------------------
 	// Internal globals and functions
 	// -------------------------------------------------------------------------
-	std::mutex			kAllocInitLock;
+	static INIT_ONCE	allocInitOnce = INIT_ONCE_STATIC_INIT;
 	void*				pMemoryManager = nullptr;
-	bool				bInitialized = false;
-	void* __fastcall	InitAllocator(void* apThis, void*, std::size_t size);
-	void*				BSAllocatorInitializer();
+	void* __fastcall	InitAllocate(void* apThis, void*, std::size_t size);
+	void* __fastcall	InitReAllocate(void* apThis, void*, void* ptr, std::size_t new_size);
+	void __fastcall		InitDeallocate(void* apThis, void*, void* ptr);
+	size_t __fastcall	InitSize(void* apThis, void*, void* ptr);
+
+	static BOOL CALLBACK BSAllocatorInitializer();
 
 	namespace CurrentMemManager {
-		void*	(__thiscall* Allocate)(void* apThis, std::size_t size) = (void* (__thiscall*)(void*, std::size_t))InitAllocator;
-		void*	(__thiscall* ReAllocate)(void* apThis, void* ptr, std::size_t new_size) = nullptr;
-		void	(__thiscall* Deallocate)(void* apThis, void* ptr) = nullptr;
-		size_t	(__thiscall* Size)(void* apThis, void* ptr) = nullptr;
+		void*	(__thiscall* Allocate)(void* apThis, std::size_t size) = (void* (__thiscall*)(void*, std::size_t))InitAllocate;
+		void*	(__thiscall* ReAllocate)(void* apThis, void* ptr, std::size_t new_size) = (void* (__thiscall*)(void*, void*, std::size_t))InitReAllocate;
+		void	(__thiscall* Deallocate)(void* apThis, void* ptr) = (void(__thiscall*)(void*, void*))InitDeallocate;
+		size_t	(__thiscall* Size)(void* apThis, void* ptr) = (size_t (__thiscall*)(void*, void*))InitSize;
 	}
 
 	// -------------------------------------------------------------------------
@@ -100,38 +103,52 @@ namespace BSMemory {
 		SafeWrite8(auiJumpAddress, 0xEB);
 	}
 
-	void* __fastcall InitAllocator(void* apThis, void*, std::size_t size) {
-		void* pAllocator = BSAllocatorInitializer();
-		if (pAllocator)
-			return CurrentMemManager::Allocate(pAllocator, size);
-		return nullptr;
+	static BOOL EnsureAllocatorInitialized() noexcept {
+		return InitOnceExecuteOnce(&allocInitOnce, BSAllocatorInitializer, nullptr, nullptr);
 	}
 
 	// This function sets up correct addresses based on the program
-	_declspec(noinline) void* BSAllocatorInitializer() {
-		std::lock_guard<std::mutex> kLock(kAllocInitLock);
-		if (bInitialized)
-			return pMemoryManager;
-
+	static BOOL CALLBACK BSAllocatorInitializer(PINIT_ONCE, PVOID, PVOID*) {
 		if (*reinterpret_cast<uint8_t*>(0x401190) != 0x55) {
 			// Is GECK
+			CreateHeapIfNotExisting(0xC770C3, 0xF9907C, 0xC62B21, 0xC62B29);
 			pMemoryManager = reinterpret_cast<void*>(0xF21B5C);
 			CurrentMemManager::Allocate = (void* (__thiscall*)(void*, size_t))0x8540A0;
 			CurrentMemManager::ReAllocate = (void* (__thiscall*)(void*, void*, size_t))0x8543B0;
 			CurrentMemManager::Deallocate = (void(__thiscall*)(void*, void*))0x8542C0;
 			CurrentMemManager::Size = (size_t(__thiscall*)(void*, void*))0x854720;
-			CreateHeapIfNotExisting(0xC770C3, 0xF9907C, 0xC62B21, 0xC62B29);
 		}
 		else {
+			CreateHeapIfNotExisting(0xEDDB6A, 0x12705BC, 0xECC3CB, 0xECC3D3);
 			pMemoryManager = reinterpret_cast<void*>(0x11F6238);
 			CurrentMemManager::Allocate = (void* (__thiscall*)(void*, size_t))0xAA3E40;
 			CurrentMemManager::ReAllocate = (void* (__thiscall*)(void*, void*, size_t))0xAA4150;
 			CurrentMemManager::Deallocate = (void(__thiscall*)(void*, void*))0xAA4060;
 			CurrentMemManager::Size = (size_t(__thiscall*)(void*, void*))0xAA44C0;
-			CreateHeapIfNotExisting(0xEDDB6A, 0x12705BC, 0xECC3CB, 0xECC3D3);
 		}
 
-		bInitialized = true;
-		return pMemoryManager;
+		return TRUE;
+	}
+
+	void* __fastcall InitAllocate(void* apThis, void*, std::size_t size) {
+		if (EnsureAllocatorInitialized())
+			return CurrentMemManager::Allocate(pMemoryManager, size);
+		return nullptr;
+	}
+
+	void* __fastcall InitReAllocate(void* apThis, void*, void* ptr, std::size_t new_size) {
+		if (EnsureAllocatorInitialized())
+			return CurrentMemManager::ReAllocate(pMemoryManager, ptr, new_size);
+		return nullptr;
+	}
+
+	void __fastcall InitDeallocate(void* apThis, void*, void* ptr) {
+		EnsureAllocatorInitialized();
+		CurrentMemManager::Deallocate(pMemoryManager, ptr);
+	}
+
+	size_t __fastcall InitSize(void* apThis, void*, void* ptr) {
+		EnsureAllocatorInitialized();
+		return CurrentMemManager::Size(pMemoryManager, ptr);
 	}
 }
