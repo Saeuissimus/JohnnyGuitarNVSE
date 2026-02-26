@@ -254,8 +254,8 @@ bool Cmd_SetMediaLocationControllerOverride_Execute(COMMAND_ARGS) {
 bool Cmd_GetHUDShudderPower_Execute(COMMAND_ARGS) {
 	*result = 0;
 	uint8_t modId = scriptObj->GetCompileIndex();
-	if (modId < 0xFF && shakeRequests.find(modId) != shakeRequests.end()) {
-		*result = shakeRequests[modId];
+	if (modId < 0xFF && shakeRequests->find(modId) != shakeRequests->end()) {
+		*result = (*shakeRequests)[modId];
 	}
 	return true;
 }
@@ -266,10 +266,10 @@ bool Cmd_SetHUDShudderPower_Execute(COMMAND_ARGS) {
 	uint8_t modId = scriptObj->GetCompileIndex();
 	if (modId < 0xFF && ExtractArgsEx(EXTRACT_ARGS_EX, &power)) {
 		if (power == 0.0f) {
-			shakeRequests.erase(modId);
+			shakeRequests->erase(modId);
 		}
 		else {
-			shakeRequests[modId] = power;
+			(*shakeRequests)[modId] = power;
 		}
 		*result = 1;
 	}
@@ -483,19 +483,19 @@ bool Cmd_SetExtraAccuracyPenaltyMult_Execute(COMMAND_ARGS) {
 		switch (a_form->GetFormType()) {
 		case FORM_TYPE::TESNPC:
 		case FORM_TYPE::TESCreature:
-			NPCAccuracy::tables.ACTBAS[a_form->GetFormID()] = mul;
+			NPCAccuracy::tables->ACTBAS[a_form->GetFormID()] = mul;
 			break;
 		case FORM_TYPE::TESCombatStyle:
-			NPCAccuracy::tables.CSTY[a_form->GetFormID()] = mul;
+			NPCAccuracy::tables->CSTY[a_form->GetFormID()] = mul;
 			break;
 		case FORM_TYPE::TESFaction:
-			NPCAccuracy::tables.FACT[a_form->GetFormID()] = mul;
+			NPCAccuracy::tables->FACT[a_form->GetFormID()] = mul;
 			break;
 
 		}
 	}
 	else if (thisObj) {
-		NPCAccuracy::tables.ACTREF[thisObj->GetFormID()] = mul;
+		NPCAccuracy::tables->ACTREF[thisObj->GetFormID()] = mul;
 
 	}
 	return true;
@@ -513,17 +513,17 @@ bool Cmd_GetExtraAccuracyPenaltyMult_Execute(COMMAND_ARGS) {
 		switch (a_form->GetFormType()) {
 		case FORM_TYPE::TESNPC:
 		case FORM_TYPE::TESCreature:
-			if (auto it = NPCAccuracy::tables.ACTBAS.find(a_form->GetFormID()); it != NPCAccuracy::tables.ACTBAS.end()) {
+			if (auto it = NPCAccuracy::tables->ACTBAS.find(a_form->GetFormID()); it != NPCAccuracy::tables->ACTBAS.end()) {
 				*result = it->second;
 			}
 			break;
 		case FORM_TYPE::TESCombatStyle:
-			if (auto it = NPCAccuracy::tables.CSTY.find(a_form->GetFormID()); it != NPCAccuracy::tables.CSTY.end()) {
+			if (auto it = NPCAccuracy::tables->CSTY.find(a_form->GetFormID()); it != NPCAccuracy::tables->CSTY.end()) {
 				*result = it->second;
 			}
 			break;
 		case FORM_TYPE::TESFaction:
-			if (auto it = NPCAccuracy::tables.FACT.find(a_form->GetFormID()); it != NPCAccuracy::tables.FACT.end()) {
+			if (auto it = NPCAccuracy::tables->FACT.find(a_form->GetFormID()); it != NPCAccuracy::tables->FACT.end()) {
 				*result = it->second;
 			}
 			break;
@@ -531,7 +531,7 @@ bool Cmd_GetExtraAccuracyPenaltyMult_Execute(COMMAND_ARGS) {
 		}
 	}
 	else if (thisObj) {
-		if (auto it = NPCAccuracy::tables.ACTREF.find(thisObj->GetFormID()); it != NPCAccuracy::tables.ACTREF.end()) {
+		if (auto it = NPCAccuracy::tables->ACTREF.find(thisObj->GetFormID()); it != NPCAccuracy::tables->ACTREF.end()) {
 			*result = it->second;
 		}
 	}
@@ -557,19 +557,19 @@ bool Cmd_RemoveExtraAccuracyPenaltyMult_Execute(COMMAND_ARGS) {
 		switch (a_form->GetFormType()) {
 		case FORM_TYPE::TESNPC:
 		case FORM_TYPE::TESCreature:
-			NPCAccuracy::tables.ACTBAS.erase(a_form->GetFormID());
+			NPCAccuracy::tables->ACTBAS.erase(a_form->GetFormID());
 			break;
 		case FORM_TYPE::TESCombatStyle:
-			NPCAccuracy::tables.CSTY.erase(a_form->GetFormID());
+			NPCAccuracy::tables->CSTY.erase(a_form->GetFormID());
 			break;
 		case FORM_TYPE::TESFaction:
-			NPCAccuracy::tables.FACT.erase(a_form->GetFormID());
+			NPCAccuracy::tables->FACT.erase(a_form->GetFormID());
 			break;
 
 		}
 	}
 	else if (thisObj) {
-		NPCAccuracy::tables.ACTREF.erase(thisObj->GetFormID());
+		NPCAccuracy::tables->ACTREF.erase(thisObj->GetFormID());
 
 	}
 	return true;
@@ -1451,10 +1451,10 @@ bool Cmd_ToggleDisableSaves_Execute(COMMAND_ARGS) {
 	*result = 0;
 	if (modIdx < 0xFF && ExtractArgsEx(EXTRACT_ARGS_EX, &doDisable)) {
 		if (doDisable) {
-			SaveGameUMap.insert(modIdx);
+			SaveGameUMap->insert(modIdx);
 		}
 		else {
-			SaveGameUMap.erase(modIdx);
+			SaveGameUMap->erase(modIdx);
 		}
 		*result = 1;
 	}

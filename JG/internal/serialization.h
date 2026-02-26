@@ -14,12 +14,12 @@ enum RecordIDs
 
 void SaveGameCallback(void*)
 {
-	if (!miscStatMap.empty())
+	if (!miscStatMap->empty())
 		{
 		_OpenRecord(kRecordID_MiscStats, SERIALIZATION_VERSION);
-		uint16_t mapLen = static_cast<uint16_t>(miscStatMap.size());
+		uint16_t mapLen = static_cast<uint16_t>(miscStatMap->size());
 		_WriteRecordData(&mapLen, sizeof(uint16_t));
-		for (auto& it : miscStatMap) {
+		for (auto& it : *miscStatMap) {
 			uint16_t len = static_cast<uint16_t>(it.first.length());
 			_WriteRecordData(&len, sizeof(uint16_t));
 			_WriteRecordData(it.first.c_str(), it.first.length());
@@ -53,8 +53,8 @@ void LoadGameCallback(void*)
 					std::string sName = std::string(buffer);
 					int value = 0;
 					_ReadRecordData(&value, sizeof(int));
-					auto statIter = miscStatMap.find(sName);
-					if (statIter == miscStatMap.end()) { continue; }
+					auto statIter = miscStatMap->find(sName);
+					if (statIter == miscStatMap->end()) { continue; }
 					miscStatMap[sName] = value;
 					UpdateMiscStatList(buffer, value);
 					

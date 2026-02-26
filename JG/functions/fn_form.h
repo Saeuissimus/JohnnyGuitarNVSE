@@ -300,18 +300,18 @@ bool Cmd_HideItemBarterEx_Execute(COMMAND_ARGS) {
 		}
 		if (unhideOrHide) {
 			if ((flags & hk_BarterHook::barterHideFlags::kBarterDoNotHideLeft) == 0) {
-				addToBarterFilter(hk_BarterHook::barterFilterListLeft, idToHandle);
+				addToBarterFilter(*hk_BarterHook::barterFilterListLeft, idToHandle);
 			}
 			if ((flags & hk_BarterHook::barterHideFlags::kBarterDoNotHideRight) == 0) {
-				addToBarterFilter(hk_BarterHook::barterFilterListRight, idToHandle);
+				addToBarterFilter(*hk_BarterHook::barterFilterListRight, idToHandle);
 			}
 		}
 		else {
 			if ((flags & hk_BarterHook::barterHideFlags::kBarterDoNotHideLeft) == 0) {
-				removeFromBarterFilter(hk_BarterHook::barterFilterListLeft, idToHandle);
+				removeFromBarterFilter(*hk_BarterHook::barterFilterListLeft, idToHandle);
 			}
 			if ((flags & hk_BarterHook::barterHideFlags::kBarterDoNotHideRight) == 0) {
-				removeFromBarterFilter(hk_BarterHook::barterFilterListRight, idToHandle);
+				removeFromBarterFilter(*hk_BarterHook::barterFilterListRight, idToHandle);
 			}
 		}
 
@@ -329,12 +329,12 @@ bool Cmd_IsItemBarterHiddenEx_Execute(COMMAND_ARGS) {
 		if (filterArg) {
 			idToHandle = filterArg->GetFormID();
 		}
-		auto it = hk_BarterHook::barterFilterListLeft.find(itemFilter->GetFormID());
-		if (it != hk_BarterHook::barterFilterListLeft.end()) {
+		auto it = hk_BarterHook::barterFilterListLeft->find(itemFilter->GetFormID());
+		if (it != hk_BarterHook::barterFilterListLeft->end()) {
 			outflags |= 1 << 0;
 		}
-		it = hk_BarterHook::barterFilterListRight.find(itemFilter->GetFormID());
-		if (it != hk_BarterHook::barterFilterListRight.end()) {
+		it = hk_BarterHook::barterFilterListRight->find(itemFilter->GetFormID());
+		if (it != hk_BarterHook::barterFilterListRight->end()) {
 			outflags |= 1 << 1;
 		}
 		*result = outflags;

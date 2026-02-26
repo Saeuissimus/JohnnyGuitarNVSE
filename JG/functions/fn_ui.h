@@ -148,12 +148,12 @@ bool Cmd_InitExtraMiscStat_Execute(COMMAND_ARGS) {
 	*result = 0;
 	if (ExtractArgsEx(EXTRACT_ARGS_EX, &name)) {
 		std::string sName = name;
-		if (availableMiscStats.size() > maxMiscStatCount) {
+		if (availableMiscStats->size() > maxMiscStatCount) {
 			TerminateProcess(GetCurrentProcess(), 0xE);
 		}
-		if (bool(availableMiscStats.count(sName))) return true;
-		availableMiscStats.emplace(sName);
-		miscStatMap[sName] = mod;
+		if (bool(availableMiscStats->count(sName))) return true;
+		availableMiscStats->emplace(sName);
+		(*miscStatMap)[sName] = mod;
 		value = mod;
 		// creating/updating menu entry
 		*result = 1;
@@ -168,14 +168,14 @@ bool Cmd_ModExtraMiscStat_Execute(COMMAND_ARGS) {
 	*result = 0;
 	if (ExtractArgsEx(EXTRACT_ARGS_EX, &name, &mod)) {
 		std::string sName = name;
-		if (!bool(availableMiscStats.count(sName))) return true;
-		auto it = miscStatMap.find(sName);
-		if (it != miscStatMap.end()) {
+		if (!bool(availableMiscStats->count(sName))) return true;
+		auto it = miscStatMap->find(sName);
+		if (it != miscStatMap->end()) {
 			it->second += mod;
 			value = it->second;
 		}
 		else {
-			miscStatMap[sName] = mod;
+			(*miscStatMap)[sName] = mod;
 			value = mod;
 		}
 		// creating/updating menu entry
@@ -191,9 +191,9 @@ bool Cmd_GetExtraMiscStat_Execute(COMMAND_ARGS) {
 	*result = 0;
 	if (ExtractArgsEx(EXTRACT_ARGS_EX, &name)) {
 		std::string sName = name;
-		if (!availableMiscStats.count(sName)) return true;
-		auto it = miscStatMap.find(sName);
-		if (it != miscStatMap.end()) *result = it->second;
+		if (!availableMiscStats->count(sName)) return true;
+		auto it = miscStatMap->find(sName);
+		if (it != miscStatMap->end()) *result = it->second;
 		if (IsConsoleMode()) Console_Print("GetExtraMiscStat \"%s\": %.f", name, *result);
 	}
 	return true;
@@ -204,19 +204,19 @@ bool Cmd_SetCustomReputationChangeIcon_Execute(COMMAND_ARGS) {
 	uint32_t tierID = 0;
 	char path[MAX_PATH] = {};
 	if (!(ExtractArgsEx(EXTRACT_ARGS_EX, &rep, &tierID, &path) && rep && IS_TYPE(rep, TESReputation) && tierID >= 1 && tierID <= 4)) return true;
-	auto pos = factionRepIcons.find(rep->GetFormID());
+	auto pos = factionRepIcons->find(rep->GetFormID());
 	uint32_t bufferSize = strlen(path) + 1;
 	char* pathCopy = new char[bufferSize];
 	strcpy_s(pathCopy, bufferSize, path);
 
-	if (pos != factionRepIcons.end()) {
+	if (pos != factionRepIcons->end()) {
 		if (*pos->second[tierID - 1]) delete[] pos->second[tierID - 1];
 		pos->second[tierID - 1] = pathCopy;
 	}
 	else {
 		std::vector<const char*> v{ "", "", "", "" };
 		v[tierID - 1] = pathCopy;
-		factionRepIcons.insert(std::pair<uint32_t, std::vector<const char*>>(rep->GetFormID(), v));
+		factionRepIcons->insert(std::pair<uint32_t, std::vector<const char*>>(rep->GetFormID(), v));
 	}
 	*result = 1;
 	return true;

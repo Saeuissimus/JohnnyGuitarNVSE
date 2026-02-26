@@ -93,7 +93,7 @@ bool Cmd_GetAvailableRadios_Execute(COMMAND_ARGS) {
 	tList<TESObjectACTI> availableRadios = {};
 	CdeclCall<void>(0x04FF1A0, thisObj, &availableRadios, nullptr);
 	for (auto radioIter = availableRadios.Begin(); !radioIter.End(); radioIter.Next()) {
-		if (*radioIter && !CdeclCall<bool>(0x0079BE30, *radioIter) && (jg_gameRadioSet.count((*radioIter)->GetFormID()) > 0)) {
+		if (*radioIter && !CdeclCall<bool>(0x0079BE30, *radioIter) && (jg_gameRadioSet->count((*radioIter)->GetFormID()) > 0)) {
 			g_arrInterface->AppendElement(radioArr, NVSEArrayElement(*radioIter));
 		}
 	}
@@ -120,8 +120,7 @@ bool Cmd_RollCredits_Execute(COMMAND_ARGS) {
 }
 
 bool Cmd_DumpIconMap_Execute(COMMAND_ARGS) {
-	auto it = factionRepIcons.begin();
-	for (auto const& it : factionRepIcons) {
+	for (auto const& it : *factionRepIcons) {
 		Console_Print("0x%X - %s %s %s %s", it.first, it.second[0], it.second[1], it.second[2], it.second[3]);
 	}
 	return true;
