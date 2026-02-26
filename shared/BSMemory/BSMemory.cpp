@@ -13,7 +13,7 @@ namespace BSMemory {
 	void __fastcall		InitDeallocate(void* apThis, void*, void* ptr);
 	size_t __fastcall	InitSize(void* apThis, void*, void* ptr);
 
-	static BOOL CALLBACK BSAllocatorInitializer();
+	static BOOL CALLBACK BSAllocatorInitializer(PINIT_ONCE, PVOID, PVOID*);
 
 	namespace CurrentMemManager {
 		void*	(__thiscall* Allocate)(void* apThis, std::size_t size) = (void* (__thiscall*)(void*, std::size_t))InitAllocate;
