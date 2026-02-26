@@ -55,7 +55,7 @@ void LoadGameCallback(void*)
 					_ReadRecordData(&value, sizeof(int));
 					auto statIter = miscStatMap->find(sName);
 					if (statIter == miscStatMap->end()) { continue; }
-					miscStatMap[sName] = value;
+					(*miscStatMap)[sName] = value;
 					UpdateMiscStatList(buffer, value);
 					
 				}
