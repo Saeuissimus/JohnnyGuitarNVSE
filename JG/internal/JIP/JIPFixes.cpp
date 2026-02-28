@@ -457,21 +457,23 @@ namespace JIPFixes {
 		bool __fastcall StrCmp(const char* a, const char* b) {
 			if (a == b)
 				return true;
-			if (!a || !b)
-				return false;
 
-			constexpr std::size_t kMax = 256;
+			return strcmp(a, b) == 0;
+			// if (!a || !b)
+			// 	return false;
 
-			// Require 'a' to be NUL-terminated within kMax bytes.
-			// (If it's not, treat it as not equal to avoid unbounded reads.)
-			const void* endA = std::memchr(a, '\0', kMax);
-			if (!endA)
-				return false;
+			// constexpr std::size_t kMax = 256;
 
-			// Compare up to and including the terminator found in 'a'.
-			const std::size_t lenA = static_cast<const char*>(endA) - a;
-			// Compare lenA characters plus the '\0'
-			return std::memcmp(a, b, lenA + 1) == 0;
+			// // Require 'a' to be NUL-terminated within kMax bytes.
+			// // (If it's not, treat it as not equal to avoid unbounded reads.)
+			// const void* endA = std::memchr(a, '\0', kMax);
+			// if (!endA)
+			// 	return false;
+
+			// // Compare up to and including the terminator found in 'a'.
+			// const std::size_t lenA = static_cast<const char*>(endA) - a;
+			// // Compare lenA characters plus the '\0'
+			// return std::memcmp(a, b, lenA + 1) == 0;
 		}
 
 		void __declspec(naked) CompareFix_Asm() {
