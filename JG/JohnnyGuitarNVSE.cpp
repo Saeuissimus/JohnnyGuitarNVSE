@@ -583,11 +583,15 @@ EXTERN_DLL_EXPORT bool NVSEPlugin_Load(const NVSEInterface* nvse) {
 		SaveGameUMap->reserve(0xFF);
 		shakeRequests->reserve(0xFF);
 
+		_MESSAGE("JohnnyGuitarNVSE about to patch JIP.");
+
 		if (bFixJIP) {
 			JIPFixes::InitData();
 			JIPFixes::InitEarlyHooks();
 			JohnnyExtraData::InitName();
 		}
+
+		_MESSAGE("JohnnyGuitarNVSE patched JIP.");
 
 		NVSEDataInterface* nvseData = static_cast<NVSEDataInterface*>(nvse->QueryInterface(kInterface_Data));
 		JohnnyExtraData::Initialize(nvseData);
@@ -597,7 +601,9 @@ EXTERN_DLL_EXPORT bool NVSEPlugin_Load(const NVSEInterface* nvse) {
 		HandleGameHooks();
 		HandleEventHooks();
 		ExtractArgsEx = g_scriptInterface->ExtractArgsEx;
+		_MESSAGE("JohnnyGuitarNVSE before serialization init.");
 		SerializationInit(nvse);
+		_MESSAGE("JohnnyGuitarNVSE finished loading.");
 	}
 
 	return true;
