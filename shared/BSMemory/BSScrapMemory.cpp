@@ -1,16 +1,17 @@
 #include "BSScrapMemory.hpp"
-#include <mutex>
+#include <Windows.h>
 
 namespace BSScrapMemory {
 
 	// -------------------------------------------------------------------------
 	// Internal globals and functions
 	// -------------------------------------------------------------------------
-	std::mutex			kAllocInitLock;
+	static INIT_ONCE	kAllocInitOnce = INIT_ONCE_STATIC_INIT;
 	void*				pMemoryManager = nullptr;
-	bool				bInitialized = false;
+
 	void* __fastcall	InitAllocator(void* apThis);
 	void*				BSScrapAllocatorInitializer();
+	static BOOL CALLBACK InitAllocatorOnce(PINIT_ONCE, PVOID, PVOID*);
 
 	namespace CurrentMemoryManager {
 		void*	(__thiscall* GetThreadScrapHeap)(void* apThis) = (void* (__thiscall*)(void*))InitAllocator;
@@ -69,12 +70,15 @@ namespace BSScrapMemory {
 		return CurrentMemoryManager::GetThreadScrapHeap(pAllocator);
 	}
 
-	// This function sets up correct addresses based on the program
-	_declspec(noinline) void* BSScrapAllocatorInitializer() {
-		std::lock_guard<std::mutex> kLock(kAllocInitLock);
-		if (bInitialized)
-			return pMemoryManager;
+	__declspec(noinline) void* BSScrapAllocatorInitializer() {
+		if (!InitOnceExecuteOnce(&kAllocInitOnce, InitAllocatorOnce, nullptr, nullptr))
+			return nullptr;
 
+		return pMemoryManager;
+	}
+
+	// This function sets up correct addresses based on the program
+	static BOOL CALLBACK InitAllocatorOnce(PINIT_ONCE, PVOID, PVOID*) {
 		if (*reinterpret_cast<uint8_t*>(0x401190) != 0x55) {
 			// Is GECK
 			pMemoryManager = reinterpret_cast<void*>(0xF21B5C);
@@ -89,8 +93,6 @@ namespace BSScrapMemory {
 			CurrentMemoryManager::GetThreadScrapHeap = (void* (__thiscall*)(void*))0xAA42E0;
 		}
 
-		bInitialized = true;
-
 		if (!static_cast<char*>(pMemoryManager)[0]) {
 #ifdef _DEBUG
 			MessageBoxA(NULL, "Tried to use thread-specific ScrapHeap before MemoryManager's initialization!", "Error", MB_OK | MB_ICONERROR);
@@ -98,7 +100,7 @@ namespace BSScrapMemory {
 			DebugBreak();
 		}
 
-		return pMemoryManager;
+		return TRUE;
 	}
 
 }
