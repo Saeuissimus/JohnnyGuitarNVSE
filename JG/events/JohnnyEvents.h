@@ -882,38 +882,31 @@ bool Cmd_SetOnReputationChangeEventHandler_Execute(COMMAND_ARGS) {
 
 void HandleEventHooks() {
 	OnDyingHandler = JGCreateEvent("OnDying", 1, 1);
-	_MESSAGE("JohnnyGuitarNVSE OnStartQuest event create.");
 	OnStartQuestHandler = JGCreateEvent("OnStartQuest", 1, 1);
 	OnStopQuestHandler = JGCreateEvent("OnStopQuest", 1, 1);
 	OnSeenDataUpdateHandler = JGCreateEvent("OnSeenDataUpdate", 1, 1);
-	_MESSAGE("JohnnyGuitarNVSE OnLimbGone event create.");
 	OnLimbGoneHandler = JGCreateEvent("OnLimbGone", 2, 2, FilterFormInt::Create);
 	OnChallengeCompleteHandler = JGCreateEvent("OnChallengeComplete", 1, 1);
 	OnCrosshairHandler = JGCreateEvent("OnCrosshair", 1, 2, FilterFormInt::Create);
 	OnCompleteQuestHandler = JGCreateEvent("OnCompleteQuest", 1, 1);
 	OnFailQuestHandler = JGCreateEvent("OnFailQuest", 1, 1);
-	_MESSAGE("JohnnyGuitarNVSE OnSettingsUpdate event create.");
 	OnSettingsUpdateHandler = JGCreateEvent("OnSettingsUpdate", 0, 0);
 	OnAddPerkHandler = JGCreateEvent("OnAddPerk", 3, 1);
 	OnRemovePerkHandler = JGCreateEvent("OnRemovePerk", 1, 1);
 	OnAVChangeHandler = JGCreateEvent("OnActorValueChange", 3, 2, FilterFormInt::Create);
 	OnPLChangeHandler = JGCreateEvent("OnProcessLevelChange", 3, 2, FilterFormInt::Create);
-	_MESSAGE("JohnnyGuitarNVSE OnRadioPostSoundAttach event create.");
 	OnRadioPostSoundAttachHandler = JGCreateEvent("OnRadioPostSoundAttach", 2, 1);
 	OnKeyboardControllerSelectionChangeHandler = JGCreateEvent("OnKeyboardControllerSelectionChange", 1, 1, FilterInt::Create);
 	OnSleepWaitEventHandler = JGCreateEvent("OnSleepWaitEventHandler", 1, 1, FilterInt::Create);
 	OnTakeBackItemHandler = JGCreateEvent("OnTakeBackItem", 3, 2);
 	OnNPCResponseHandler = JGCreateEvent("OnNPCResponse", 5, 1, FilterInt::Create);
 	OnGeneralSubtitleHandler = JGCreateEvent("OnGeneralSubtitle", 5, 1, FilterFormInt::Create);
-	_MESSAGE("JohnnyGuitarNVSE OnReputationChangeHandler event create.");
 	OnReputationChangeHandler = JGCreateEvent("OnReputationChangeHandler", 3, 1);
 	OnNPCAVChangeHandler = JGCreateEvent("OnNPCActorValueChangeHandler", 4, 2, FilterFormInt::Create);
 
-	_MESSAGE("JohnnyGuitarNVSE creating hooks for events.");
 	CallUDF = g_scriptInterface->CallFunctionAlt;
 	WriteRelCall(0x55678A, (uint32_t)HandleSeenDataUpdateEvent);
 	WriteRelCall(0x557053, (uint32_t)HandleSeenDataUpdateEvent);
-	_MESSAGE("JohnnyGuitarNVSE creating hook for OnDyingEventAsm.");
 	WriteRelJump(0x89F4A4, (uint32_t)OnDyingEventAsm);
 	WriteRelJump(0x60CA24, (uint32_t)OnQuestStartStopEventAsm);
 	WriteRelCall(0x572FF1, (uint32_t)HandleLimbGoneEvent);
@@ -923,7 +916,6 @@ void HandleEventHooks() {
 	WriteRelCall(0x60CB5A, (uint32_t)handleQuestFail);
 	WriteRelCall(0x60CA78, (uint32_t)handleQuestComplete);
 	WriteRelCall(0x7D6D73, (uint32_t)handleSettingsUpdate);
-	_MESSAGE("JohnnyGuitarNVSE creating hook for handleAddPerkEvent.");
 	WriteRelCall(0x5D4E5B, (uint32_t)handleAddPerkEvent);
 	WriteRelCall(0x7865BD, (uint32_t)handleAddPerkEvent);
 	WriteRelCall(0x7E772D, (uint32_t)handleAddPerkEvent);
@@ -933,7 +925,6 @@ void HandleEventHooks() {
 	WriteRelCall(0x5D4F89, (uint32_t)handleRemovePerkEvent);
 	SafeWriteBuf(0x5D4F8E, "\x0F\x1F\x00", 3);
 	SafeWrite8(0x60CA29, 0xCC);
-	_MESSAGE("JohnnyGuitarNVSE creating hook for AVChangeEventAsm.");
 	WriteRelJump(0x66EE50, (uint32_t)AVChangeEventAsm);
 	// Process Level change: MoveToHigh
 	SafeWrite32(0x108AC7C, (uint32_t)HandlePLChangeEvent<0x881D30>);
@@ -960,7 +951,6 @@ void HandleEventHooks() {
 	hk_KeyboardControllerUIPositionEvent<0x0715CD5>();
 
 
-	_MESSAGE("JohnnyGuitarNVSE creating hook for Radio.");
 	//Radio
 	hk_RadioTuneOnEvent<0x511816>();
 	hk_RadioTuneOnEvent<0x579C64>();
@@ -979,7 +969,6 @@ void HandleEventHooks() {
 	WriteRelCall(0x4CB976, (uint32_t)HandleTakeBackItem);
 	WriteRelCall(0x8F24A1, (uint32_t)GetExtraDataListHook);
 
-	_MESSAGE("JohnnyGuitarNVSE creating hook for HandleOnNPCResponseEvent.");
 	WriteRelCall(0x7630FD, (uint32_t)HandleOnNPCResponseEvent);
 
 	//HUDMainMenu::AppendSubtitleData() called by Interface::ShowText()

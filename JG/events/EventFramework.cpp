@@ -10,13 +10,9 @@ void* __fastcall GenericCreateFilter(void** Filters, uint32_t numFilters) {
 }
 
 EventInfo __cdecl JGCreateEvent(const char* EventName, uint8_t maxArgs, uint8_t maxFilters, void* (__fastcall* CreatorFunction)(void**, uint32_t)) {
-	_MESSAGE("JohnnyGuitarNVSE JGCreateEvent.");
 	SRWUniqueLock lock(eventInfosMutex);
-	_MESSAGE("JohnnyGuitarNVSE JGCreateEvent mutex acquired.");
 	EventInfo eventinfo = new EventInformation(EventName, maxArgs, maxFilters, CreatorFunction);
-	_MESSAGE("JohnnyGuitarNVSE JGCreateEvent event information created.");
 	EventInfos->push_back(eventinfo);
-	_MESSAGE("JohnnyGuitarNVSE JGCreateEvent event information pushed.");
 	return eventinfo;
 }
 
