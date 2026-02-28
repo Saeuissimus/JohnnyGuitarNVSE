@@ -303,7 +303,7 @@ __declspec(naked) void __cdecl AVChangeEventAsm(ActorValueOwner* avOwner, uint32
 		push    eax
 		push    dword ptr[ebp + 0x08]
 		call    HandleAVChangeEvent
-		skipHandler :
+		// skipHandler :
 			mov     ecx, [ebp - 4]
 			cmp     dword ptr[ecx + 0x54], 0
 			jz      done
