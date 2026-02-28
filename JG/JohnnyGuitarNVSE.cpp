@@ -102,7 +102,7 @@ void MessageHandler(NVSEMessagingInterface::Message* msg) {
 				}
 			}
 			ComputeDiscoveredRadioDirectory();
-			for (const auto& EventInfo : EventInfos) {
+			for (const auto& EventInfo : *EventInfos) {
 				EventInfo->AddQueuedEvents();
 				EventInfo->DeleteEvents();
 			}

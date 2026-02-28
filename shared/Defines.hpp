@@ -12,6 +12,30 @@
 #include <cmath>
 #include <string>
 #include <cassert>
+#include <optional>
+
+// Used to avoid non trivial constructors during DLL load (i.e. while executing DllMain)
+template<class T>
+struct Lazy {
+	std::optional<T> value;
+
+	T& get() {
+		if (!value) value.emplace();
+		return *value;
+	}
+	const T& get() const {
+		return const_cast<Lazy*>(this)->get();
+	}
+
+	T* operator->() { return &get(); }
+	const T* operator->() const { return &get(); }
+
+	T& operator*() { return get(); }
+	const T& operator*() const { return get(); }
+
+	// bool initialized() const { return value.has_value(); }
+	// void reset() { value.reset(); }
+};
 
 #define JIP_CHANGES 1
 

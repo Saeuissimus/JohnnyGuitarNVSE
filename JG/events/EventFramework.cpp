@@ -2,8 +2,8 @@
 #include "GameObjects.h"
 
 bool (*CallUDF)(Script* funcScript, TESObjectREFR* callingObj, uint8_t numArgs, ...);
-std::mutex eventInfosMutex;
-std::vector<EventInfo> EventInfos;
+Lazy<std::mutex> eventInfosMutex;
+Lazy<std::vector<EventInfo>> EventInfos;
 
 void* __fastcall GenericCreateFilter(void** Filters, uint32_t numFilters) {
 	return new FilterForm(Filters, numFilters);
@@ -11,22 +11,22 @@ void* __fastcall GenericCreateFilter(void** Filters, uint32_t numFilters) {
 
 EventInfo __cdecl JGCreateEvent(const char* EventName, uint8_t maxArgs, uint8_t maxFilters, void* (__fastcall* CreatorFunction)(void**, uint32_t)) {
 	_MESSAGE("JohnnyGuitarNVSE JGCreateEvent.");
-	std::lock_guard<std::mutex> lock(eventInfosMutex);
+	std::lock_guard<std::mutex> lock(*eventInfosMutex);
 	_MESSAGE("JohnnyGuitarNVSE JGCreateEvent mutex acquired.");
 	EventInfo eventinfo = new EventInformation(EventName, maxArgs, maxFilters, CreatorFunction);
 	_MESSAGE("JohnnyGuitarNVSE JGCreateEvent event information created.");
-	EventInfos.push_back(eventinfo);
+	EventInfos->push_back(eventinfo);
 	_MESSAGE("JohnnyGuitarNVSE JGCreateEvent event information pushed.");
 	return eventinfo;
 }
 
 void __cdecl JGFreeEvent(EventInfo& toRemove) {
-	std::lock_guard<std::mutex> lock(eventInfosMutex);
+	std::lock_guard<std::mutex> lock(*eventInfosMutex);
 	if (!toRemove) return;
-	auto it = std::find(std::begin(EventInfos), std::end(EventInfos), toRemove);
-	if (it != EventInfos.end()) {
+	auto it = std::find(std::begin(*EventInfos), std::end(*EventInfos), toRemove);
+	if (it != EventInfos->end()) {
 		delete* it;
-		it = EventInfos.erase(it);
+		it = EventInfos->erase(it);
 	}
 	toRemove = nullptr;
 }
