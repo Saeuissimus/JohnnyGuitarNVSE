@@ -220,7 +220,7 @@ public:
 };
 
 typedef EventInformation* EventInfo;
-extern Lazy<std::mutex> eventInfosMutex;
+extern SRWLOCK eventInfosMutex;
 extern Lazy<std::vector<EventInfo>> EventInfos;
 
 extern void* __fastcall GenericCreateFilter(void** Filters, uint32_t numFilters);

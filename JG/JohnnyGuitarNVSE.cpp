@@ -102,9 +102,12 @@ void MessageHandler(NVSEMessagingInterface::Message* msg) {
 				}
 			}
 			ComputeDiscoveredRadioDirectory();
-			for (const auto& EventInfo : *EventInfos) {
-				EventInfo->AddQueuedEvents();
-				EventInfo->DeleteEvents();
+			{
+				SRWSharedLock lock(eventInfosMutex);
+				for (const auto& EventInfo : *EventInfos) {
+					EventInfo->AddQueuedEvents();
+					EventInfo->DeleteEvents();
+				}
 			}
 			if (!g_statsMenu) g_statsMenu = StatsMenu::Get();
 			if (g_statsMenu && InterfaceManager::GetSingleton() && InterfaceManager::GetSingleton()->IsMenuVisible(kMenuType_Stats) && recalculateStatFilters) {
