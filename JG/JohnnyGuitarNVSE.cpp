@@ -594,11 +594,15 @@ EXTERN_DLL_EXPORT bool NVSEPlugin_Load(const NVSEInterface* nvse) {
 		_MESSAGE("JohnnyGuitarNVSE patched JIP.");
 
 		NVSEDataInterface* nvseData = static_cast<NVSEDataInterface*>(nvse->QueryInterface(kInterface_Data));
+		_MESSAGE("JohnnyGuitarNVSE initializing extra data.");
 		JohnnyExtraData::Initialize(nvseData);
+		_MESSAGE("JohnnyGuitarNVSE setting functions for lambda vars and inventory.");
 		InventoryRefGetForID = static_cast<InventoryRef * (*)(uint32_t)>(nvseData->GetFunc(NVSEDataInterface::kNVSEData_InventoryReferenceGetForRefID));
 		CaptureLambdaVars = static_cast<_CaptureLambdaVars>(nvseData->GetFunc(NVSEDataInterface::kNVSEData_LambdaSaveVariableList));
 		UncaptureLambdaVars = static_cast<_UncaptureLambdaVars>(nvseData->GetFunc(NVSEDataInterface::kNVSEData_LambdaUnsaveVariableList));
+		_MESSAGE("JohnnyGuitarNVSE handle game hooks.");
 		HandleGameHooks();
+		_MESSAGE("JohnnyGuitarNVSE handle event hooks.");
 		HandleEventHooks();
 		ExtractArgsEx = g_scriptInterface->ExtractArgsEx;
 		_MESSAGE("JohnnyGuitarNVSE before serialization init.");
